@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#1a3c5e"/>
+  <title>Panel Admin — Comercial Moises</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚙️</div>
+      <div class="logo-text">
+        <h1>COMERCIAL MOISES</h1>
+        <span>Panel Administrador</span>
+      </div>
+    </div>
+    <nav>
+      <a href="index.html">← Ver tienda</a>
+      <a href="#" onclick="logout()" style="color:#f87171;">Cerrar sesión</a>
+    </nav>
+    <button class="hamburger" id="hamburger" onclick="toggleAdminNav()" aria-label="Menú">☰</button>
+  </div>
+</header>
+
+<!-- Nav drawer mobile admin -->
+<div class="nav-drawer" id="adminNavDrawer">
+  <a href="index.html">← Ver tienda</a>
+  <a href="#" onclick="logout();closeAdminNav();" style="color:#f87171;">Cerrar sesión</a>
+</div>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div style="font-size:2.5rem;margin-bottom:10px;">🔐</div>
+    <h2>Acceso Admin</h2>
+    <p>Ingresá tus credenciales para administrar la tienda.</p>
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos.</div>
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="adminPanel" style="display:none;">
+  <div class="admin-layout">
+
+    <!-- SIDEBAR (desktop) -->
+    <div class="admin-sidebar">
+      <h3>Menú</h3>
+      <div class="sidebar-item active" id="sb-productos" onclick="showSection('productos',this)">📦 Productos</div>
+      <div class="sidebar-item" id="sb-banners" onclick="showSection('banners',this)">🏷️ Banners / Ofertas</div>
+      <div class="sidebar-item" id="sb-financiacion" onclick="showSection('financiacion',this)">💳 Financiación</div>
+      <div class="sidebar-item" id="sb-config" onclick="showSection('config',this)">⚙️ Configuración</div>
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="admin-content">
+
+      <!-- PRODUCTOS -->
+      <div id="section-productos">
+        <div class="admin-header">
+          <h2>📦 Gestión de Productos</h2>
+          <button class="btn btn-accent" onclick="openProductModal()">+ Nuevo producto</button>
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Foto</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Cuotas</th><th>Acciones</th></tr></thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BANNERS -->
+      <div id="section-banners" style="display:none;">
+        <div class="admin-header">
+          <h2>🏷️ Banners / Ofertas</h2>
+          <button class="btn btn-accent" onclick="openBannerModal()">+ Nuevo banner</button>
+        </div>
+        <p style="color:var(--text-light);margin-bottom:1rem;font-size:0.88rem;">Los banners activos se muestran como carrusel en la tienda. Solo aparecen si la fecha de hoy está dentro del rango configurado.</p>
+        <div id="bannersTableWrap"></div>
+      </div>
+
+      <!-- FINANCIACIÓN -->
+      <div id="section-financiacion" style="display:none;">
+        <div class="admin-header">
+          <h2>💳 Opciones de Financiación</h2>
+          <button class="btn btn-accent" onclick="addFinancingRow()">+ Agregar cuota</button>
+        </div>
+        <div class="table-wrap" id="financingEditor"></div>
+        <button class="btn btn-primary" style="margin-top:1rem;width:100%;justify-content:center;" onclick="saveFinancing()">💾 Guardar cambios</button>
+      </div>
+
+      <!-- CONFIG -->
+      <div id="section-config" style="display:none;">
+        <div class="admin-header"><h2>⚙️ Configuración</h2></div>
+        <div style="background:white;border-radius:12px;padding:1.5rem;border:2px solid var(--border);max-width:500px;">
+          <div class="form-group">
+            <label>Número de WhatsApp (con código de país, sin +)</label>
+            <input type="tel" id="cfgWhatsapp" placeholder="5491112345678"/>
+          </div>
+          <div class="form-group">
+            <label>Teléfono para mostrar</label>
+            <input type="tel" id="cfgTelefono" placeholder="(011) 1234-5678"/>
+          </div>
+          <div class="form-group">
+            <label>Dirección del local</label>
+            <input type="text" id="cfgDireccion" placeholder="Av. Principal 123, Buenos Aires"/>
+          </div>
+          <div class="form-group">
+            <label>Horario de atención</label>
+            <input type="text" id="cfgHorario" placeholder="Lun a Sáb 9 a 20hs"/>
+          </div>
+          <button class="btn btn-primary" onclick="saveConfig()" style="width:100%;justify-content:center;">💾 Guardar configuración</button>
+          <div id="configSaved" style="color:var(--success);font-size:0.9rem;margin-top:10px;display:none;text-align:center;">✓ Guardado correctamente.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- NAV MOBILE INFERIOR -->
+  <nav class="admin-mobile-nav" id="adminMobileNav">
+    <div class="admin-mobile-nav-inner">
+      <button class="admin-mobile-tab active" id="tab-productos" onclick="showSection('productos',this)">
+        <span class="tab-icon">📦</span>Productos
+      </button>
+      <button class="admin-mobile-tab" id="tab-banners" onclick="showSection('banners',this)">
+        <span class="tab-icon">🏷️</span>Banners
+      </button>
+      <button class="admin-mobile-tab" id="tab-financiacion" onclick="showSection('financiacion',this)">
+        <span class="tab-icon">💳</span>Cuotas
+      </button>
+      <button class="admin-mobile-tab" id="tab-config" onclick="showSection('config',this)">
+        <span class="tab-icon">⚙️</span>Config.
+      </button>
+    </div>
+  </nav>
+
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="productModal" role="dialog">
+  <div class="modal">
+    <button class="modal-close" onclick="closeProductModal()">✕</button>
+    <h3 id="modalTitle">Nuevo producto</h3>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="pName" placeholder="Ej: Heladera 320L"/>
+      </div>
+      <div class="form-group">
+        <label>Categoría *</label>
+        <select id="pCategory">
+          <option value="electrodomestico">Electrodoméstico</option>
+          <option value="mueble">Mueble</option>
+          <option value="tecnologia">Tecnología</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Descripción *</label>
+      <textarea id="pDesc" placeholder="Describí el producto, características principales..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Precio ($) *</label>
+        <input type="number" id="pPrice" placeholder="500000" inputmode="numeric"/>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:26px;">
+        <input type="checkbox" id="pCuotas" style="width:20px;height:20px;flex-shrink:0;"/>
+        <label for="pCuotas" style="margin:0;font-weight:600;font-size:0.9rem;">Disponible en cuotas</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>URL de imagen (opcional)</label>
+      <input type="url" id="pImage" placeholder="https://..." inputmode="url"/>
+      <small style="color:#999;font-size:0.8rem;">Podés usar links de Google Fotos, Unsplash, etc.</small>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:0.5rem;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveProduct()" style="flex:1;min-width:120px;justify-content:center;">💾 Guardar</button>
+      <button class="btn btn-danger" onclick="closeProductModal()" style="flex:1;min-width:120px;justify-content:center;">Cancelar</button>
+    </div>
+    <div id="productError" style="color:var(--danger);font-size:0.88rem;margin-top:10px;display:none;"></div>
+  </div>
+</div>
+
+<!-- MODAL BANNER -->
+<div class="modal-overlay" id="bannerModal" role="dialog">
+  <div class="modal" style="max-width:600px;">
+    <button class="modal-close" onclick="closeBannerModal()">✕</button>
+    <h3 id="bannerModalTitle">Nuevo Banner</h3>
+
+    <div class="form-group">
+      <label>Etiqueta superior (badge) *</label>
+      <input type="text" id="bBadge" placeholder="Ej: OFERTA DEL MES · JULIO 2025"/>
+    </div>
+    <div class="form-group">
+      <label>Título principal *</label>
+      <input type="text" id="bTitle" placeholder="Ej: 🔥 Liquidación de Invierno"/>
+    </div>
+    <div class="form-group">
+      <label>Descripción *</label>
+      <textarea id="bSubtitle" placeholder="Describí la oferta..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Texto de descuento *</label>
+        <input type="text" id="bDiscount" placeholder="20% OFF / 12 MSI / GRATIS"/>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:26px;">
+        <input type="checkbox" id="bActive" style="width:20px;height:20px;flex-shrink:0;" checked/>
+        <label for="bActive" style="margin:0;font-weight:600;font-size:0.9rem;">Banner activo</label>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Válido desde *</label>
+        <input type="date" id="bFrom"/>
+      </div>
+      <div class="form-group">
+        <label>Válido hasta *</label>
+        <input type="date" id="bTo"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Color de fondo</label>
+      <div class="color-picker-row" id="colorPicker">
+        <div class="color-chip selected" style="background:#1a3c5e;" data-color="#1a3c5e" onclick="selectColor(this)"></div>
+        <div class="color-chip" style="background:#1e6b45;" data-color="#1e6b45" onclick="selectColor(this)"></div>
+        <div class="color-chip" style="background:#7c3aed;" data-color="#7c3aed" onclick="selectColor(this)"></div>
+        <div class="color-chip" style="background:#b45309;" data-color="#b45309" onclick="selectColor(this)"></div>
+        <div class="color-chip" style="background:#be123c;" data-color="#be123c" onclick="selectColor(this)"></div>
+        <div class="color-chip" style="background:#0e7490;" data-color="#0e7490" onclick="selectColor(this)"></div>
+        <div class="color-chip" style="background:#374151;" data-color="#374151" onclick="selectColor(this)"></div>
+        <div class="color-chip" style="background:#c2410c;" data-color="#c2410c" onclick="selectColor(this)"></div>
+      </div>
+      <input type="color" id="bBgCustom" value="#1a3c5e" style="margin-top:8px;width:44px;height:30px;border:none;cursor:pointer;border-radius:6px;" oninput="syncCustomColor(this.value)"/>
+      <small style="color:#999;font-size:0.8rem;"> o elegí un color personalizado</small>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:6px;">Vista previa:</label>
+      <div id="bannerPreview" style="border-radius:10px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:90px;background:#1a3c5e;">
+        <div style="flex:1;">
+          <div id="pvBadge" style="background:rgba(255,255,255,0.2);color:white;font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;border:1px solid rgba(255,255,255,0.3);">BADGE</div>
+          <div id="pvTitle" style="font-size:1rem;font-weight:800;color:white;margin-bottom:3px;">Título</div>
+          <div id="pvSubtitle" style="font-size:0.8rem;color:rgba(255,255,255,0.8);">Descripción...</div>
+        </div>
+        <div id="pvDiscount" style="background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:10px;padding:10px 14px;text-align:center;color:white;font-weight:900;font-size:1.3rem;flex-shrink:0;">OFF</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveBanner()" style="flex:1;min-width:120px;justify-content:center;">💾 Guardar</button>
+      <button class="btn btn-danger" onclick="closeBannerModal()" style="flex:1;min-width:120px;justify-content:center;">Cancelar</button>
+    </div>
+    <div id="bannerError" style="color:var(--danger);font-size:0.88rem;margin-top:10px;display:none;"></div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div class="modal-overlay" id="deleteModal" role="dialog">
+  <div class="modal" style="max-width:340px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:10px;">🗑️</div>
+    <h3>¿Eliminar producto?</h3>
+    <p style="color:var(--text-light);margin:10px 0 20px;font-size:0.9rem;">Esta acción no se puede deshacer.</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" onclick="confirmDelete()" style="flex:1;justify-content:center;">Eliminar</button>
+      <button class="btn btn-primary" onclick="closeDeleteModal()" style="flex:1;justify-content:center;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── AUTH ───────────────────────────────────────────────
+  const ADMIN_USER = 'admin';
+  const ADMIN_PASS = localStorage.getItem('cm_admin_pass') || 'admin123';
+
+  function doLogin() {
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    if (u === ADMIN_USER && p === ADMIN_PASS) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      initAdmin();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+
+  function logout() {
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+  }
+
+  function toggleAdminNav() { document.getElementById('adminNavDrawer').classList.toggle('open'); }
+  function closeAdminNav()  { document.getElementById('adminNavDrawer').classList.remove('open'); }
+
+  // ── DATOS ──────────────────────────────────────────────
+  const DEFAULT_PRODUCTS = [
+    { id:1,  name:"Heladera Samsung No Frost 380L",      category:"electrodomestico", desc:"Heladera con freezer No Frost de 380 litros. Tecnología Digital Inverter, enfriamiento uniforme, cajón de frutas y verduras con humedad controlada, alarma de puerta abierta. Clase A+. Garantía 2 años. Color blanco.", price:1250000, image:"https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=600&q=80", cuotas:true },
+    { id:2,  name:"Lavarropas LG 8kg Inverter",          category:"electrodomestico", desc:"Lavarropas automático 8kg, motor Inverter Direct Drive (garantía 10 años). 14 programas de lavado, centrifugado 1200 RPM, tecnología 6 Motion. Bajo consumo. Carga frontal.", price:890000, image:"https://images.unsplash.com/photo-1626806823728-37a1c09e6c9d?w=600&q=80", cuotas:true },
+    { id:3,  name:"Smart TV Samsung 55\" 4K UHD",        category:"tecnologia",       desc:"Televisor 55\" con resolución 4K UHD. Sistema Tizen, Google Assistant, Alexa y Bixby, WiFi y Bluetooth 5.0, HDR10+, 3 HDMI 2.0, 2 USB. Diseño sin bordes.", price:780000, image:"https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&q=80", cuotas:true },
+    { id:4,  name:"Juego de Living 3+1+1 Cuerpos",       category:"mueble",           desc:"Sofá de 3 cuerpos + 2 sillones. Tapizado en tela antimanchas de alta resistencia. Estructura de madera maciza, espuma de alta densidad. Disponible en gris, beige y verde musgo.", price:1450000, image:"https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80", cuotas:true },
+    { id:5,  name:"Notebook HP 15\" Core i5 12va Gen",   category:"tecnologia",       desc:"Laptop HP 15.6\" Full HD IPS, Intel Core i5 12va gen, 8GB RAM DDR4, SSD 512GB, Intel Iris Xe, batería 12hs, Windows 11 Home. Incluye bolso de transporte.", price:680000, image:"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80", cuotas:true },
+    { id:6,  name:"Cocina Longvie 5 Hornallas",          category:"electrodomestico", desc:"Cocina a gas 5 hornallas (1 triple corona), horno 65 litros. Encendido electrónico, tapa de vidrio templado, parrilla y asadera incluidas. 55cm de ancho. Acero inoxidable.", price:520000, image:"https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80", cuotas:true },
+    { id:7,  name:"Juego Dormitorio 2 Plazas Completo",  category:"mueble",           desc:"Cama 140x190cm con respaldo en ecocuero, 2 mesas de luz, cómoda 6 cajones con espejo. MDF enchapado. Disponible en blanco, wengué y roble. Incluye sommier.", price:1850000, image:"https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600&q=80", cuotas:true },
+    { id:8,  name:"Juego Comedor Mesa + 6 Sillas",       category:"mueble",           desc:"Mesa extensible 160-200cm, base de roble macizo, vidrio templado 10mm. Incluye 6 sillas tapizadas en tela antimanchas.", price:1120000, image:"https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600&q=80", cuotas:true },
+    { id:9,  name:"Aire Acondicionado Split Inverter 3000W", category:"electrodomestico", desc:"Frío/calor 3000W (12.000 BTU), Inverter, WiFi con control desde el celular, filtro purificador, clase A++. Hasta 30m². Instalación no incluida.", price:950000, image:"https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&q=80", cuotas:true },
+    { id:10, name:"Microondas Whirlpool 28L con Grill",  category:"electrodomestico", desc:"Microondas digital 28L con grill. 800W, 10 niveles, temporizador 90min, plato 31cm, interior inoxidable. Incluye rejilla de grill.", price:185000, image:"https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=600&q=80", cuotas:true }
+  ];
+
+  const DEFAULT_FINANCING = [
+    { cuotas:3, interes:"Sin interés" }, { cuotas:6, interes:"Sin interés" },
+    { cuotas:12, interes:"15% interés" }, { cuotas:18, interes:"25% interés" }, { cuotas:24, interes:"40% interés" }
+  ];
+
+  const DEFAULT_CONFIG = { whatsapp:"5491100000000", telefono:"(011) 0000-0000", direccion:"Av. Principal 123, Buenos Aires", horario:"Lun a Sáb 9 a 20hs" };
+
+  const DEFAULT_BANNERS = [
+    { id:1, badge:"OFERTA DEL MES · JULIO 2025", title:"🔥 Liquidación de Invierno", subtitle:"Hasta 20% OFF en toda la línea de electrodomésticos.", discount:"20% OFF", bg:"#1a3c5e", dateFrom:"2025-07-01", dateTo:"2025-07-31", active:true },
+    { id:2, badge:"FINANCIACIÓN ESPECIAL", title:"💳 12 Cuotas Sin Interés", subtitle:"12 cuotas sin interés en muebles y línea blanca.", discount:"12 MSI", bg:"#1e6b45", dateFrom:"2025-07-01", dateTo:"2025-07-31", active:true },
+    { id:3, badge:"DÍA DEL PADRE · 20 JULIO", title:"🎁 Regalale lo mejor a papá", subtitle:"TVs y electrónica con descuentos especiales.", discount:"15% OFF", bg:"#7c3aed", dateFrom:"2025-07-14", dateTo:"2025-07-20", active:true },
+    { id:4, badge:"ENVÍO GRATIS", title:"🚚 Envío sin cargo en compras +$500.000", subtitle:"Envío gratis dentro de la ciudad.", discount:"GRATIS", bg:"#b45309", dateFrom:"2025-07-01", dateTo:"2025-08-31", active:true }
+  ];
+
+  // Limpiar localStorage viejo con campo video
+  const _sp = JSON.parse(localStorage.getItem('cm_products'));
+  if (_sp && _sp.some(p => p.hasOwnProperty('video'))) localStorage.removeItem('cm_products');
+
+  let products  = JSON.parse(localStorage.getItem('cm_products'))  || DEFAULT_PRODUCTS;
+  let financing = JSON.parse(localStorage.getItem('cm_financing')) || DEFAULT_FINANCING;
+  let config    = JSON.parse(localStorage.getItem('cm_config'))    || DEFAULT_CONFIG;
+  let banners   = JSON.parse(localStorage.getItem('cm_banners'))   || DEFAULT_BANNERS;
+
+  let editingId = null, deletingId = null, editingBannerId = null;
+  let selectedBannerColor = '#1a3c5e';
+
+  function saveProducts()  { localStorage.setItem('cm_products', JSON.stringify(products)); }
+  function saveBannersStore() { localStorage.setItem('cm_banners', JSON.stringify(banners)); }
+
+  // ── INIT ───────────────────────────────────────────────
+  function initAdmin() {
+    renderStats();
+    renderTable();
+    renderBannersTable();
+    renderFinancingEditor();
+    loadConfig();
+  }
+
+  // ── NAVEGACIÓN ─────────────────────────────────────────
+  function showSection(name, el) {
+    ['productos','banners','financiacion','config'].forEach(s => {
+      document.getElementById('section-' + s).style.display = s === name ? 'block' : 'none';
+    });
+    // Sidebar desktop
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    const sb = document.getElementById('sb-' + name);
+    if (sb) sb.classList.add('active');
+    // Tabs mobile
+    document.querySelectorAll('.admin-mobile-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById('tab-' + name);
+    if (tab) tab.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // ── STATS ──────────────────────────────────────────────
+  function renderStats() {
+    const total = products.length;
+    const e = products.filter(p => p.category === 'electrodomestico').length;
+    const m = products.filter(p => p.category === 'mueble').length;
+    const t = products.filter(p => p.category === 'tecnologia').length;
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total productos</div></div>
+      <div class="stat-card"><div class="stat-num">${e}</div><div class="stat-label">Electrodomésticos</div></div>
+      <div class="stat-card"><div class="stat-num">${m}</div><div class="stat-label">Muebles</div></div>
+      <div class="stat-card"><div class="stat-num">${t}</div><div class="stat-label">Tecnología</div></div>`;
+  }
+
+  // ── TABLA PRODUCTOS ────────────────────────────────────
+  function renderTable() {
+    const bc = { electrodomestico:'badge-electrodomestico', mueble:'badge-mueble', tecnologia:'badge-tecnologia', otro:'badge-otro' };
+    const cl = { electrodomestico:'Electrodoméstico', mueble:'Mueble', tecnologia:'Tecnología', otro:'Otro' };
+    const em = { electrodomestico:'🏠', mueble:'🛋️', tecnologia:'📺', otro:'📦' };
+
+    document.getElementById('productsTableBody').innerHTML = products.length === 0
+      ? `<tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-light);">No hay productos. ¡Agregá el primero!</td></tr>`
+      : products.map(p => `
+          <tr>
+            <td>${p.image ? `<img src="${p.image}" alt="" onerror="this.outerHTML='<span style=font-size:1.8rem>${em[p.category]||'📦'}</span>'">` : `<span style="font-size:1.8rem;">${em[p.category]||'📦'}</span>`}</td>
+            <td><strong>${p.name}</strong><br><span style="color:var(--text-light);font-size:0.8rem;">${p.desc.substring(0,55)}${p.desc.length>55?'...':''}</span></td>
+            <td><span class="badge ${bc[p.category]||'badge-otro'}">${cl[p.category]||'Otro'}</span></td>
+            <td><strong>$${formatNum(p.price)}</strong></td>
+            <td>${p.cuotas ? '<span style="color:var(--success);font-size:1.1rem;">✓</span>' : '<span style="color:#ccc;">—</span>'}</td>
+            <td class="td-actions">
+              <button class="btn btn-edit" onclick="openProductModal(${p.id})">✏️ Editar</button>
+              <button class="btn btn-danger" onclick="openDeleteModal(${p.id})">🗑️</button>
+            </td>
+          </tr>`).join('');
+  }
+
+  // ── MODAL PRODUCTO ─────────────────────────────────────
+  function openProductModal(id) {
+    editingId = id || null;
+    document.getElementById('productError').style.display = 'none';
+    if (id) {
+      const p = products.find(x => x.id === id);
+      document.getElementById('modalTitle').textContent = 'Editar producto';
+      document.getElementById('pName').value     = p.name;
+      document.getElementById('pCategory').value = p.category;
+      document.getElementById('pDesc').value     = p.desc;
+      document.getElementById('pPrice').value    = p.price;
+      document.getElementById('pCuotas').checked = p.cuotas;
+      document.getElementById('pImage').value    = p.image || '';
+    } else {
+      document.getElementById('modalTitle').textContent = 'Nuevo producto';
+      document.getElementById('pName').value     = '';
+      document.getElementById('pCategory').value = 'electrodomestico';
+      document.getElementById('pDesc').value     = '';
+      document.getElementById('pPrice').value    = '';
+      document.getElementById('pCuotas').checked = true;
+      document.getElementById('pImage').value    = '';
+    }
+    document.getElementById('productModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeProductModal() {
+    document.getElementById('productModal').classList.remove('open');
+    document.body.style.overflow = '';
+    editingId = null;
+  }
+
+  function saveProduct() {
+    const name     = document.getElementById('pName').value.trim();
+    const category = document.getElementById('pCategory').value;
+    const desc     = document.getElementById('pDesc').value.trim();
+    const price    = parseFloat(document.getElementById('pPrice').value);
+    const cuotas   = document.getElementById('pCuotas').checked;
+    const image    = document.getElementById('pImage').value.trim();
+
+    if (!name || !desc || isNaN(price) || price <= 0) {
+      const err = document.getElementById('productError');
+      err.textContent = 'Completá nombre, descripción y precio.';
+      err.style.display = 'block';
+      return;
+    }
+
+    if (editingId) {
+      const idx = products.findIndex(x => x.id === editingId);
+      products[idx] = { ...products[idx], name, category, desc, price, cuotas, image };
+    } else {
+      const newId = products.length > 0 ? Math.max(...products.map(x => x.id)) + 1 : 1;
+      products.push({ id: newId, name, category, desc, price, cuotas, image });
+    }
+    saveProducts();
+    renderStats();
+    renderTable();
+    closeProductModal();
+  }
+
+  // ── ELIMINAR ───────────────────────────────────────────
+  function openDeleteModal(id) {
+    deletingId = id;
+    document.getElementById('deleteModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('open');
+    document.body.style.overflow = '';
+    deletingId = null;
+  }
+  function confirmDelete() {
+    products = products.filter(x => x.id !== deletingId);
+    saveProducts(); renderStats(); renderTable(); closeDeleteModal();
+  }
+
+  // ── FINANCIACIÓN ───────────────────────────────────────
+  function renderFinancingEditor() {
+    document.getElementById('financingEditor').innerHTML = `
+      <table class="admin-table" style="min-width:360px;">
+        <thead><tr><th>Cuotas</th><th>Interés / descripción</th><th></th></tr></thead>
+        <tbody id="financingRows"></tbody>
+      </table>`;
+    financing.forEach((f, i) => addFinancingRow(f, i));
+  }
+
+  function addFinancingRow(data, index) {
+    const tbody = document.getElementById('financingRows');
+    const idx = index !== undefined ? index : financing.length;
+    if (index === undefined) financing.push({ cuotas:'', interes:'Sin interés' });
+    const tr = document.createElement('tr');
+    tr.id = 'frow-' + idx;
+    tr.innerHTML = `
+      <td><input type="number" value="${data?data.cuotas:''}" placeholder="6" inputmode="numeric" style="width:70px;padding:8px;border:2px solid var(--border);border-radius:6px;font-size:16px;" id="fc-${idx}"/></td>
+      <td><input type="text" value="${data?data.interes:'Sin interés'}" placeholder="Sin interés" style="width:160px;padding:8px;border:2px solid var(--border);border-radius:6px;font-size:16px;" id="fi-${idx}"/></td>
+      <td><button class="btn btn-danger" onclick="removeFinancingRow(${idx})">🗑️</button></td>`;
+    tbody.appendChild(tr);
+  }
+
+  function removeFinancingRow(idx) {
+    document.getElementById('frow-' + idx).remove();
+    financing.splice(idx, 1);
+    renderFinancingEditor();
+  }
+
+  function saveFinancing() {
+    const newF = [];
+    document.querySelectorAll('#financingRows tr').forEach(tr => {
+      const inputs = tr.querySelectorAll('input');
+      const cuotas = parseInt(inputs[0].value);
+      const interes = inputs[1].value.trim();
+      if (!isNaN(cuotas) && cuotas > 0 && interes) newF.push({ cuotas, interes });
+    });
+    financing = newF.sort((a, b) => a.cuotas - b.cuotas);
+    localStorage.setItem('cm_financing', JSON.stringify(financing));
+    renderFinancingEditor();
+    alert('✓ Opciones de financiación guardadas.');
+  }
+
+  // ── CONFIG ─────────────────────────────────────────────
+  function loadConfig() {
+    document.getElementById('cfgWhatsapp').value  = config.whatsapp;
+    document.getElementById('cfgTelefono').value  = config.telefono;
+    document.getElementById('cfgDireccion').value = config.direccion;
+    document.getElementById('cfgHorario').value   = config.horario;
+  }
+
+  function saveConfig() {
+    config = {
+      whatsapp:  document.getElementById('cfgWhatsapp').value.trim(),
+      telefono:  document.getElementById('cfgTelefono').value.trim(),
+      direccion: document.getElementById('cfgDireccion').value.trim(),
+      horario:   document.getElementById('cfgHorario').value.trim()
+    };
+    localStorage.setItem('cm_config', JSON.stringify(config));
+    const msg = document.getElementById('configSaved');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 3000);
+  }
+
+  // ── BANNERS ────────────────────────────────────────────
+  function renderBannersTable() {
+    const today = new Date().toISOString().split('T')[0];
+    if (banners.length === 0) {
+      document.getElementById('bannersTableWrap').innerHTML = `<div class="empty-state"><div class="icon">🏷️</div><p>No hay banners. ¡Creá el primero!</p></div>`;
+      return;
+    }
+    document.getElementById('bannersTableWrap').innerHTML = `
+      <div class="table-wrap"><table class="admin-table" style="min-width:480px;">
+        <thead><tr><th>Preview</th><th>Título</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          ${banners.map(b => {
+            const ok = b.active && b.dateFrom <= today && b.dateTo >= today;
+            return `<tr>
+              <td><div class="banner-preview-mini" style="background:${b.bg};">${b.discount}</div></td>
+              <td><strong>${b.title}</strong><br><span style="color:var(--text-light);font-size:0.8rem;">${b.badge}</span></td>
+              <td style="font-size:0.82rem;white-space:nowrap;">${b.dateFrom}<br>→ ${b.dateTo}</td>
+              <td>${ok ? '<span class="badge" style="background:#dcfce7;color:#15803d;">✓ Visible</span>'
+                : b.active ? '<span class="badge" style="background:#fef3c7;color:#92400e;">Sin fecha</span>'
+                : '<span class="badge" style="background:#f3f4f6;color:#6b7280;">Inactivo</span>'}</td>
+              <td class="td-actions">
+                <button class="btn btn-edit" onclick="openBannerModal(${b.id})">✏️</button>
+                <button class="btn btn-danger" onclick="deleteBanner(${b.id})">🗑️</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>`;
+  }
+
+  function openBannerModal(id) {
+    editingBannerId = id || null;
+    document.getElementById('bannerError').style.display = 'none';
+    const today = new Date().toISOString().split('T')[0];
+    if (id) {
+      const b = banners.find(x => x.id === id);
+      document.getElementById('bannerModalTitle').textContent = 'Editar Banner';
+      document.getElementById('bBadge').value    = b.badge;
+      document.getElementById('bTitle').value    = b.title;
+      document.getElementById('bSubtitle').value = b.subtitle;
+      document.getElementById('bDiscount').value = b.discount;
+      document.getElementById('bFrom').value     = b.dateFrom;
+      document.getElementById('bTo').value       = b.dateTo;
+      document.getElementById('bActive').checked = b.active;
+      selectedBannerColor = b.bg;
+      document.getElementById('bBgCustom').value = b.bg;
+    } else {
+      document.getElementById('bannerModalTitle').textContent = 'Nuevo Banner';
+      ['bBadge','bTitle','bSubtitle','bDiscount'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('bFrom').value = today;
+      document.getElementById('bTo').value   = today;
+      document.getElementById('bActive').checked = true;
+      selectedBannerColor = '#1a3c5e';
+      document.getElementById('bBgCustom').value = '#1a3c5e';
+    }
+    updateColorChips();
+    updateBannerPreview();
+    document.getElementById('bannerModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    ['bBadge','bTitle','bSubtitle','bDiscount'].forEach(id => {
+      document.getElementById(id).oninput = updateBannerPreview;
+    });
+  }
+
+  function closeBannerModal() {
+    document.getElementById('bannerModal').classList.remove('open');
+    document.body.style.overflow = '';
+    editingBannerId = null;
+  }
+
+  function selectColor(el) {
+    selectedBannerColor = el.dataset.color;
+    document.getElementById('bBgCustom').value = selectedBannerColor;
+    updateColorChips(); updateBannerPreview();
+  }
+
+  function syncCustomColor(val) {
+    selectedBannerColor = val;
+    updateColorChips(); updateBannerPreview();
+  }
+
+  function updateColorChips() {
+    document.querySelectorAll('.color-chip').forEach(c => c.classList.toggle('selected', c.dataset.color === selectedBannerColor));
+  }
+
+  function updateBannerPreview() {
+    document.getElementById('bannerPreview').style.background = selectedBannerColor;
+    document.getElementById('pvBadge').textContent    = document.getElementById('bBadge').value    || 'BADGE';
+    document.getElementById('pvTitle').textContent    = document.getElementById('bTitle').value    || 'Título del banner';
+    document.getElementById('pvSubtitle').textContent = document.getElementById('bSubtitle').value || 'Descripción...';
+    document.getElementById('pvDiscount').textContent = document.getElementById('bDiscount').value || 'OFF';
+  }
+
+  function saveBanner() {
+    const badge    = document.getElementById('bBadge').value.trim();
+    const title    = document.getElementById('bTitle').value.trim();
+    const subtitle = document.getElementById('bSubtitle').value.trim();
+    const discount = document.getElementById('bDiscount').value.trim();
+    const dateFrom = document.getElementById('bFrom').value;
+    const dateTo   = document.getElementById('bTo').value;
+    const active   = document.getElementById('bActive').checked;
+
+    if (!badge || !title || !subtitle || !discount || !dateFrom || !dateTo) {
+      const err = document.getElementById('bannerError');
+      err.textContent = 'Completá todos los campos obligatorios.';
+      err.style.display = 'block';
+      return;
+    }
+    if (dateFrom > dateTo) {
+      const err = document.getElementById('bannerError');
+      err.textContent = 'La fecha de inicio no puede ser mayor a la de fin.';
+      err.style.display = 'block';
+      return;
+    }
+    const data = { badge, title, subtitle, discount, bg: selectedBannerColor, dateFrom, dateTo, active };
+    if (editingBannerId) {
+      const idx = banners.findIndex(x => x.id === editingBannerId);
+      banners[idx] = { ...banners[idx], ...data };
+    } else {
+      const newId = banners.length > 0 ? Math.max(...banners.map(x => x.id)) + 1 : 1;
+      banners.push({ id: newId, ...data });
+    }
+    saveBannersStore(); renderBannersTable(); closeBannerModal();
+  }
+
+  function deleteBanner(id) {
+    if (!confirm('¿Eliminar este banner?')) return;
+    banners = banners.filter(x => x.id !== id);
+    saveBannersStore(); renderBannersTable();
+  }
+
+  // ── CERRAR MODALES ─────────────────────────────────────
+  ['productModal','bannerModal','deleteModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      ['productModal','bannerModal','deleteModal'].forEach(id => {
+        document.getElementById(id).classList.remove('open');
+      });
+      document.body.style.overflow = '';
+    }
+  });
+
+  // ── HELPERS ────────────────────────────────────────────
+  function formatNum(n) { return Math.round(n).toLocaleString('es-AR'); }
+</script>
+</body>
+</html>

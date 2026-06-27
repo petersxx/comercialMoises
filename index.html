@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#1a3c5e"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>Comercial Moises - Electrodomésticos y Muebles</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🏠</div>
+      <div class="logo-text">
+        <h1>COMERCIAL MOISES</h1>
+        <span>Electrodomésticos & Muebles</span>
+      </div>
+    </div>
+    <nav>
+      <a href="#productos">Productos</a>
+      <a href="#financiacion">Financiación</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <button class="hamburger" id="hamburger" onclick="toggleNav()" aria-label="Menú">☰</button>
+  </div>
+</header>
+
+<!-- Nav drawer mobile -->
+<div class="nav-drawer" id="navDrawer">
+  <a href="#productos" onclick="closeNav()">📦 Productos</a>
+  <a href="#financiacion" onclick="closeNav()">💳 Financiación</a>
+  <a href="#contacto" onclick="closeNav()">📞 Contacto</a>
+</div>
+
+<section class="hero">
+  <h2>Todo para tu hogar en un solo lugar</h2>
+  <p>Electrodomésticos, muebles y tecnología con las mejores opciones de financiación en cuotas.</p>
+  <a href="#productos" class="btn btn-accent">Ver productos</a>
+</section>
+
+<main>
+
+  <!-- BANNERS -->
+  <div class="banners-section" id="bannersSection" style="display:none;">
+    <div class="banner-carousel" id="bannerCarousel">
+      <div class="banner-track" id="bannerTrack"></div>
+      <button class="banner-arrow prev" onclick="moveBanner(-1)" aria-label="Anterior">&#8249;</button>
+      <button class="banner-arrow next" onclick="moveBanner(1)" aria-label="Siguiente">&#8250;</button>
+    </div>
+    <div class="banner-nav" id="bannerNav"></div>
+  </div>
+
+  <!-- BUSCADOR -->
+  <div class="search-bar" style="margin-top:1.25rem;" id="productos">
+    <input type="text" id="searchInput" placeholder="🔍  Buscar producto..." oninput="renderProducts()" autocomplete="off" autocorrect="off" spellcheck="false"/>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <span>Categoría:</span>
+    <button class="filter-btn active" onclick="setFilter('todos', this)">Todos</button>
+    <button class="filter-btn" onclick="setFilter('electrodomestico', this)">Electrodomésticos</button>
+    <button class="filter-btn" onclick="setFilter('mueble', this)">Muebles</button>
+    <button class="filter-btn" onclick="setFilter('tecnologia', this)">Tecnología</button>
+    <button class="filter-btn" onclick="setFilter('otro', this)">Otros</button>
+  </div>
+
+  <!-- GRID -->
+  <div class="products-grid" id="productsGrid"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="icon">📦</div>
+    <p>No se encontraron productos.</p>
+  </div>
+
+  <!-- FINANCIACIÓN -->
+  <section class="financing-section" id="financiacion">
+    <div class="section-title">💳 Opciones de Financiación</div>
+    <div class="financing-grid" id="financingGrid"></div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="contact-section" id="contacto">
+    <div class="section-title">📞 Contacto</div>
+    <div class="contact-cards" id="contactCards"></div>
+  </section>
+
+</main>
+
+<a href="#" id="whatsappFloat" class="whatsapp-float" target="_blank" rel="noopener">
+  <span class="wa-icon">💬</span> WhatsApp
+</a>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="productModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<footer>© 2025 Comercial Moises · Todos los derechos reservados</footer>
+
+<script>
+  // ── DATOS ──────────────────────────────────────────────
+  const DEFAULT_PRODUCTS = [
+    { id:1, name:"Heladera Samsung No Frost 380L", category:"electrodomestico", desc:"Heladera con freezer No Frost de 380 litros. Tecnología Digital Inverter, enfriamiento uniforme, cajón de frutas y verduras con humedad controlada, alarma de puerta abierta. Clase A+. Garantía 2 años. Color blanco.", price:1250000, image:"https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=600&q=80", cuotas:true },
+    { id:2, name:"Lavarropas LG 8kg Inverter", category:"electrodomestico", desc:"Lavarropas automático 8kg, motor Inverter Direct Drive (garantía 10 años). 14 programas de lavado, centrifugado 1200 RPM, tecnología 6 Motion. Bajo consumo. Carga frontal.", price:890000, image:"https://images.unsplash.com/photo-1626806823728-37a1c09e6c9d?w=600&q=80", cuotas:true },
+    { id:3, name:"Smart TV Samsung 55\" 4K UHD", category:"tecnologia", desc:"Televisor 55\" con resolución 4K UHD. Sistema Tizen, Google Assistant, Alexa y Bixby integrados, WiFi y Bluetooth 5.0, HDR10+, 3 entradas HDMI 2.0, 2 USB. Diseño sin bordes.", price:780000, image:"https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&q=80", cuotas:true },
+    { id:4, name:"Juego de Living 3+1+1 Cuerpos", category:"mueble", desc:"Sofá de 3 cuerpos + 2 sillones individuales. Tapizado en tela antimanchas de alta resistencia. Estructura de madera maciza, espuma de alta densidad. Disponible en gris, beige y verde musgo.", price:1450000, image:"https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80", cuotas:true },
+    { id:5, name:"Notebook HP 15\" Core i5 12va Gen", category:"tecnologia", desc:"Laptop HP 15.6\" Full HD IPS, Intel Core i5 12va generación, 8GB RAM DDR4, SSD 512GB, Intel Iris Xe, batería 12hs, Windows 11 Home. Incluye bolso de transporte.", price:680000, image:"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80", cuotas:true },
+    { id:6, name:"Cocina Longvie 5 Hornallas", category:"electrodomestico", desc:"Cocina a gas 5 hornallas (1 triple corona), horno 65 litros. Encendido electrónico, tapa de vidrio templado, parrilla y asadera incluidas. 55cm de ancho. Acero inoxidable.", price:520000, image:"https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80", cuotas:true },
+    { id:7, name:"Juego Dormitorio 2 Plazas Completo", category:"mueble", desc:"Cama 140x190cm con respaldo tapizado en ecocuero, 2 mesas de luz con cajón, cómoda 6 cajones con espejo biselado. MDF enchapado. Disponible en blanco, wengué y roble. Incluye sommier.", price:1850000, image:"https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600&q=80", cuotas:true },
+    { id:8, name:"Juego Comedor Mesa + 6 Sillas", category:"mueble", desc:"Mesa extensible 160-200cm para 6-8 personas. Base madera maciza de roble, vidrio templado 10mm. Incluye 6 sillas tapizadas en tela antimanchas.", price:1120000, image:"https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600&q=80", cuotas:true },
+    { id:9, name:"Aire Acondicionado Split Inverter 3000W", category:"electrodomestico", desc:"Frío/calor 3000W (12.000 BTU), tecnología Inverter, WiFi integrado, control desde el celular, filtro purificador, clase A++. Cubre hasta 30m². Instalación no incluida.", price:950000, image:"https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&q=80", cuotas:true },
+    { id:10, name:"Microondas Whirlpool 28L con Grill", category:"electrodomestico", desc:"Microondas digital 28L con grill. 800W, 10 niveles de cocción, temporizador 90min, plato 31cm, display LED, interior inoxidable de fácil limpieza. Incluye rejilla de grill.", price:185000, image:"https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=600&q=80", cuotas:true }
+  ];
+
+  const DEFAULT_BANNERS = [
+    { id:1, badge:"OFERTA DEL MES · JULIO 2025", title:"🔥 Liquidación de Invierno", subtitle:"Hasta 20% OFF en toda la línea de electrodomésticos. ¡Aprovechá mientras dure el stock!", discount:"20% OFF", bg:"#1a3c5e", dateFrom:"2025-07-01", dateTo:"2025-07-31", active:true },
+    { id:2, badge:"FINANCIACIÓN ESPECIAL", title:"💳 12 Cuotas Sin Interés", subtitle:"Solo este mes, financiá tu compra en 12 cuotas sin interés en todos los muebles y línea blanca.", discount:"12 MSI", bg:"#1e6b45", dateFrom:"2025-07-01", dateTo:"2025-07-31", active:true },
+    { id:3, badge:"DÍA DEL PADRE · 20 JULIO", title:"🎁 Regalale lo mejor a papá", subtitle:"TVs, notebooks y electrónica con descuentos especiales. ¡El regalo perfecto con financiación en cuotas!", discount:"15% OFF", bg:"#7c3aed", dateFrom:"2025-07-14", dateTo:"2025-07-20", active:true },
+    { id:4, badge:"ENVÍO GRATIS", title:"🚚 Envío sin cargo en compras +$500.000", subtitle:"Comprás hoy, lo tenés en casa. Envío gratis dentro de la ciudad en compras superiores a $500.000.", discount:"GRATIS", bg:"#b45309", dateFrom:"2025-07-01", dateTo:"2025-08-31", active:true }
+  ];
+
+  const DEFAULT_FINANCING = [
+    { cuotas:3, interes:"Sin interés" },
+    { cuotas:6, interes:"Sin interés" },
+    { cuotas:12, interes:"15% interés" },
+    { cuotas:18, interes:"25% interés" },
+    { cuotas:24, interes:"40% interés" }
+  ];
+
+  const DEFAULT_CONFIG = {
+    whatsapp:"5491100000000",
+    telefono:"(011) 0000-0000",
+    direccion:"Av. Principal 123, Buenos Aires",
+    horario:"Lun a Sáb 9 a 20hs"
+  };
+
+  // Limpiar datos viejos si tienen campo video
+  const _stored = JSON.parse(localStorage.getItem('cm_products'));
+  if (_stored && _stored.some(p => p.hasOwnProperty('video'))) {
+    localStorage.removeItem('cm_products');
+  }
+
+  let products  = JSON.parse(localStorage.getItem('cm_products'))  || DEFAULT_PRODUCTS;
+  let financing = JSON.parse(localStorage.getItem('cm_financing')) || DEFAULT_FINANCING;
+  let config    = JSON.parse(localStorage.getItem('cm_config'))    || DEFAULT_CONFIG;
+  let banners   = JSON.parse(localStorage.getItem('cm_banners'))   || DEFAULT_BANNERS;
+
+  let activeFilter = 'todos';
+  let selectedCuotas = null;
+  let currentModalProduct = null;
+  let bannerIndex = 0;
+  let bannerTimer = null;
+
+  // ── NAV MOBILE ─────────────────────────────────────────
+  function toggleNav() {
+    document.getElementById('navDrawer').classList.toggle('open');
+  }
+  function closeNav() {
+    document.getElementById('navDrawer').classList.remove('open');
+  }
+  document.addEventListener('click', e => {
+    const drawer = document.getElementById('navDrawer');
+    const btn = document.getElementById('hamburger');
+    if (drawer.classList.contains('open') && !drawer.contains(e.target) && !btn.contains(e.target)) {
+      closeNav();
+    }
+  });
+
+  // ── FILTROS ────────────────────────────────────────────
+  function setFilter(cat, el) {
+    activeFilter = cat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderProducts();
+  }
+
+  // ── RENDER PRODUCTOS ───────────────────────────────────
+  function renderProducts() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const list = products.filter(p => {
+      const matchCat = activeFilter === 'todos' || p.category === activeFilter;
+      const matchQ = !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+
+    const grid = document.getElementById('productsGrid');
+    const empty = document.getElementById('emptyState');
+
+    if (list.length === 0) {
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+    grid.innerHTML = list.map(p => {
+      const cuota = calcCuota(p.price, 6);
+      const imgContent = p.image
+        ? `<img src="${escHtml(p.image)}" alt="${escHtml(p.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<span style=font-size:3rem>${categoryEmoji(p.category)}</span>'">`
+        : `<span style="font-size:3rem;">${categoryEmoji(p.category)}</span>`;
+
+      return `
+        <div class="product-card">
+          <div class="product-img">${imgContent}</div>
+          <div class="product-body">
+            <div class="product-category">${categoryLabel(p.category)}</div>
+            <div class="product-name">${escHtml(p.name)}</div>
+            <div class="product-desc">${escHtml(p.desc.substring(0,80))}${p.desc.length>80?'...':''}</div>
+            <div class="product-price">$${formatNum(p.price)}</div>
+            ${p.cuotas ? `<div class="product-cuota">✓ 6 cuotas sin interés — $${formatNum(cuota)}/mes</div>` : ''}
+            <div class="product-actions">
+              <button class="btn btn-primary btn-sm" onclick="openModal(${p.id})">Ver detalle</button>
+              <a href="${escHtml(waLink(p, null))}" class="btn btn-whatsapp btn-sm" target="_blank" rel="noopener">💬 Consultar</a>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── MODAL ──────────────────────────────────────────────
+  function openModal(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    currentModalProduct = p;
+    selectedCuotas = financing.length > 0 ? (financing[1] || financing[0]) : null;
+
+    const imgContent = p.image
+      ? `<img src="${escHtml(p.image)}" alt="${escHtml(p.name)}" style="width:100%;border-radius:10px;margin-bottom:1rem;max-height:240px;object-fit:cover;" loading="lazy" onerror="this.style.display='none'">`
+      : `<div style="font-size:4rem;text-align:center;margin-bottom:1rem;">${categoryEmoji(p.category)}</div>`;
+
+    const cuotaBtns = financing.map((f, i) =>
+      `<button class="cuota-btn ${i===1?'selected':''}" onclick="selectCuota(${i})">${f.cuotas}x</button>`
+    ).join('');
+
+    document.getElementById('modalContent').innerHTML = `
+      ${imgContent}
+      <div style="color:#e8a020;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${categoryLabel(p.category)}</div>
+      <h3 style="font-size:1.15rem;margin-bottom:8px;padding-right:32px;">${escHtml(p.name)}</h3>
+      <p style="color:#555;line-height:1.65;font-size:0.9rem;margin-bottom:12px;">${escHtml(p.desc)}</p>
+      <div style="font-size:1.55rem;font-weight:900;color:#1a3c5e;margin-bottom:2px;">$${formatNum(p.price)}</div>
+      <div style="font-size:0.8rem;color:#999;margin-bottom:16px;">Precio de contado</div>
+      ${p.cuotas && financing.length > 0 ? `
+        <div style="margin-bottom:16px;">
+          <strong style="display:block;margin-bottom:8px;color:#1a3c5e;font-size:0.95rem;">💳 Elegí tu plan de cuotas:</strong>
+          <div class="cuota-selector">${cuotaBtns}</div>
+          <div class="cuota-result" id="cuotaResult"></div>
+        </div>` : ''}
+      <a href="#" id="waModalBtn" class="btn btn-whatsapp" target="_blank" rel="noopener" style="width:100%;justify-content:center;font-size:0.95rem;">
+        💬 Consultar por WhatsApp
+      </a>`;
+
+    updateCuotaResult();
+    document.getElementById('productModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function selectCuota(idx) {
+    selectedCuotas = financing[idx];
+    document.querySelectorAll('.cuota-btn').forEach((b, i) => b.classList.toggle('selected', i === idx));
+    updateCuotaResult();
+  }
+
+  function updateCuotaResult() {
+    const p = currentModalProduct;
+    if (!p || !selectedCuotas) return;
+    const monto = calcCuotaConInteres(p.price, selectedCuotas.cuotas, selectedCuotas.interes);
+    const total = monto * selectedCuotas.cuotas;
+    const res = document.getElementById('cuotaResult');
+    if (res) res.innerHTML = `<strong>${selectedCuotas.cuotas} cuotas de $${formatNum(monto)}/mes</strong> · ${selectedCuotas.interes}<br><span style="color:#888;font-size:0.82rem;">Total a pagar: $${formatNum(total)}</span>`;
+    const waBtn = document.getElementById('waModalBtn');
+    if (waBtn) waBtn.href = waLink(p, selectedCuotas);
+  }
+
+  function closeModal() {
+    document.getElementById('productModal').classList.remove('open');
+    document.body.style.overflow = '';
+    currentModalProduct = null;
+    selectedCuotas = null;
+  }
+
+  document.getElementById('productModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── BANNERS ────────────────────────────────────────────
+  function renderBanners() {
+    const today = new Date().toISOString().split('T')[0];
+    const active = banners.filter(b => b.active && b.dateFrom <= today && b.dateTo >= today);
+    const section = document.getElementById('bannersSection');
+    if (active.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    document.getElementById('bannerTrack').innerHTML = active.map(b => `
+      <div class="banner-slide" style="background:${escHtml(b.bg)};">
+        <div class="banner-body">
+          <div class="banner-badge">${escHtml(b.badge)}</div>
+          <div class="banner-title">${escHtml(b.title)}</div>
+          <div class="banner-subtitle">${escHtml(b.subtitle)}</div>
+          <div class="banner-dates">Válido del ${formatDate(b.dateFrom)} al ${formatDate(b.dateTo)}</div>
+        </div>
+        <div class="banner-discount">
+          <div class="pct">${escHtml(b.discount)}</div>
+          <div class="off-label">¡Aprovechá!</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('bannerNav').innerHTML = active.map((_, i) =>
+      `<button class="banner-dot ${i===0?'active':''}" onclick="goToBanner(${i})" aria-label="Banner ${i+1}"></button>`
+    ).join('');
+
+    bannerIndex = 0;
+    addSwipeSupport(document.getElementById('bannerCarousel'), () => moveBanner(1), () => moveBanner(-1));
+    if (active.length > 1) {
+      if (bannerTimer) clearInterval(bannerTimer);
+      bannerTimer = setInterval(() => moveBanner(1), 5000);
+    }
+  }
+
+  function moveBanner(dir) {
+    const dots = document.querySelectorAll('.banner-dot');
+    if (!dots.length) return;
+    bannerIndex = (bannerIndex + dir + dots.length) % dots.length;
+    goToBanner(bannerIndex);
+  }
+
+  function goToBanner(i) {
+    bannerIndex = i;
+    document.getElementById('bannerTrack').style.transform = `translateX(-${i * 100}%)`;
+    document.querySelectorAll('.banner-dot').forEach((d, j) => d.classList.toggle('active', j === i));
+  }
+
+  // Soporte swipe para carrusel (iOS y Android)
+  function addSwipeSupport(el, onLeft, onRight) {
+    let startX = 0, startY = 0;
+    el.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+        dx < 0 ? onLeft() : onRight();
+      }
+    }, { passive: true });
+  }
+
+  // ── FINANCIACIÓN ───────────────────────────────────────
+  function renderFinancing() {
+    document.getElementById('financingGrid').innerHTML = financing.map(f => `
+      <div class="financing-card">
+        <div class="cuotas">${f.cuotas}x</div>
+        <div class="cuotas-label">cuotas mensuales</div>
+        <div class="interes">${escHtml(f.interes)}</div>
+      </div>`).join('');
+  }
+
+  // ── CONTACTO ───────────────────────────────────────────
+  function renderContact() {
+    document.getElementById('whatsappFloat').href = `https://wa.me/${config.whatsapp}?text=${encodeURIComponent('¡Hola! Me comunico desde su página web. Quisiera información sobre sus productos y financiación.')}`;
+    document.getElementById('contactCards').innerHTML = `
+      <div class="contact-card"><div class="icon">📱</div><div><h4>WhatsApp</h4><p>+${escHtml(config.whatsapp)}</p></div></div>
+      <div class="contact-card"><div class="icon">📞</div><div><h4>Teléfono</h4><p>${escHtml(config.telefono)}</p></div></div>
+      <div class="contact-card"><div class="icon">📍</div><div><h4>Dirección</h4><p>${escHtml(config.direccion)}</p></div></div>
+      <div class="contact-card"><div class="icon">🕐</div><div><h4>Horario</h4><p>${escHtml(config.horario)}</p></div></div>`;
+  }
+
+  // ── HELPERS ────────────────────────────────────────────
+  function formatNum(n) { return Math.round(n).toLocaleString('es-AR'); }
+  function calcCuota(price, cuotas) { return Math.ceil(price / cuotas); }
+  function calcCuotaConInteres(price, cuotas, interes) {
+    const pct = parseFloat(interes) || 0;
+    return Math.ceil((price * (1 + pct / 100)) / cuotas);
+  }
+  function categoryLabel(cat) {
+    return { electrodomestico:'Electrodoméstico', mueble:'Mueble', tecnologia:'Tecnología', otro:'Otro' }[cat] || cat;
+  }
+  function categoryEmoji(cat) {
+    return { electrodomestico:'🏠', mueble:'🛋️', tecnologia:'📺', otro:'📦' }[cat] || '📦';
+  }
+  function waLink(p, cuotaOpt) {
+    let msg = `¡Hola! Estoy interesado/a en: *${p.name}* — $${formatNum(p.price)}.`;
+    if (cuotaOpt) {
+      const monto = calcCuotaConInteres(p.price, cuotaOpt.cuotas, cuotaOpt.interes);
+      msg += ` Me interesa el plan de *${cuotaOpt.cuotas} cuotas de $${formatNum(monto)}/mes* (${cuotaOpt.interes}).`;
+    }
+    msg += ' ¿Tienen disponibilidad?';
+    return `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(msg)}`;
+  }
+  function formatDate(str) {
+    const [, m, d] = str.split('-');
+    const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return `${parseInt(d)} ${months[parseInt(m)-1]}`;
+  }
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── INIT ───────────────────────────────────────────────
+  renderBanners();
+  renderProducts();
+  renderFinancing();
+  renderContact();
+</script>
+</body>
+</html>
