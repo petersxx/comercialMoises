@@ -207,7 +207,7 @@
         : `<span style="font-size:3rem;">${categoryEmoji(p.category)}</span>`;
 
       return `
-        <div class="product-card">
+        <div class="product-card" onclick="openModal(${p.id})" style="cursor:pointer;">
           <div class="product-img">${imgContent}</div>
           <div class="product-body">
             <div class="product-category">${categoryLabel(p.category)}</div>
@@ -216,8 +216,7 @@
             <div class="product-price">$${formatNum(p.price)}</div>
             ${p.cuotas ? `<div class="product-cuota">✓ 6 cuotas sin interés — $${formatNum(cuota)}/mes</div>` : ''}
             <div class="product-actions">
-              <button class="btn btn-primary btn-sm" onclick="openModal(${p.id})">Ver detalle</button>
-              <a href="${escHtml(waLink(p, null))}" class="btn btn-whatsapp btn-sm" target="_blank" rel="noopener">💬 Consultar</a>
+              <a href="${escHtml(waLink(p, null))}" class="btn btn-whatsapp btn-sm" target="_blank" rel="noopener" onclick="event.stopPropagation()">💬 Consultar</a>
             </div>
           </div>
         </div>`;
